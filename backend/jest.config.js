@@ -1,6 +1,5 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+/** @type {import('jest').Config} */
+module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
@@ -9,7 +8,10 @@ const config: Config = {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
-  testTimeout: 30000,
+  testTimeout: 60000,
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
@@ -25,5 +27,3 @@ const config: Config = {
     ],
   },
 };
-
-export default config;

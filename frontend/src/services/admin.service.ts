@@ -26,7 +26,7 @@ export const adminService = {
   getPlatformStats: async (): Promise<PlatformStats> => {
     try {
       const response = await apiClient.get<PlatformStats>('/admin/stats');
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const users = getStoredUsers();
       const locations = getStoredParkingLocations();
@@ -62,7 +62,7 @@ export const adminService = {
   getUsers: async (): Promise<User[]> => {
     try {
       const response = await apiClient.get<User[]>('/admin/users');
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       return getStoredUsers();
     }
@@ -71,7 +71,7 @@ export const adminService = {
   updateUserStatus: async (userId: string, status: AccountStatus): Promise<User> => {
     try {
       const response = await apiClient.patch<User>(`/admin/users/${userId}/status`, { status });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const users = getStoredUsers();
       const idx = users.findIndex((u) => u.id === userId);
@@ -85,7 +85,7 @@ export const adminService = {
   getReports: async (): Promise<Report[]> => {
     try {
       const response = await apiClient.get<Report[]>('/admin/reports');
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       return getStoredReports();
     }
@@ -103,7 +103,7 @@ export const adminService = {
         resolutionNotes,
         adminId,
       });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const reports = getStoredReports();
       const idx = reports.findIndex((r) => r.id === reportId);

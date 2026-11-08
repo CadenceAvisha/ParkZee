@@ -90,7 +90,7 @@ export const qrService = {
   recordCheckIn: async (bookingId: string): Promise<Booking> => {
     try {
       const response = await apiClient.post<Booking>(`/qr/check-in`, { bookingId });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const bookings = getStoredBookings();
       const idx = bookings.findIndex((b) => b.id === bookingId);
@@ -106,7 +106,7 @@ export const qrService = {
   recordCheckOut: async (bookingId: string): Promise<Booking> => {
     try {
       const response = await apiClient.post<Booking>(`/qr/check-out`, { bookingId });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const bookings = getStoredBookings();
       const idx = bookings.findIndex((b) => b.id === bookingId);

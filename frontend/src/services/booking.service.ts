@@ -15,7 +15,7 @@ export const bookingService = {
         driverId,
         ...req,
       });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       console.warn('Backend unavailable, processing reservation locally', err);
       const locations = getStoredParkingLocations();
@@ -83,7 +83,7 @@ export const bookingService = {
   getDriverBookings: async (driverId: string): Promise<Booking[]> => {
     try {
       const response = await apiClient.get<Booking[]>(`/bookings/driver/${driverId}`);
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const bookings = getStoredBookings();
       return bookings.filter((b) => b.driverId === driverId);
@@ -93,7 +93,7 @@ export const bookingService = {
   getOwnerBookings: async (ownerId: string): Promise<Booking[]> => {
     try {
       const response = await apiClient.get<Booking[]>(`/bookings/owner/${ownerId}`);
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const locations = getStoredParkingLocations().filter((l) => l.ownerId === ownerId);
       const locationIds = locations.map((l) => l.id);
@@ -105,7 +105,7 @@ export const bookingService = {
   getAllBookings: async (): Promise<Booking[]> => {
     try {
       const response = await apiClient.get<Booking[]>('/bookings/admin/all');
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       return getStoredBookings();
     }
@@ -114,7 +114,7 @@ export const bookingService = {
   getBookingById: async (bookingId: string): Promise<Booking | null> => {
     try {
       const response = await apiClient.get<Booking>(`/bookings/${bookingId}`);
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const bookings = getStoredBookings();
       return bookings.find((b) => b.id === bookingId) || null;
@@ -124,7 +124,7 @@ export const bookingService = {
   cancelBooking: async (bookingId: string, reason?: string): Promise<Booking> => {
     try {
       const response = await apiClient.post<Booking>(`/bookings/${bookingId}/cancel`, { reason });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const bookings = getStoredBookings();
       const idx = bookings.findIndex((b) => b.id === bookingId);
@@ -149,7 +149,7 @@ export const bookingService = {
   updateBookingStatus: async (bookingId: string, status: BookingStatus): Promise<Booking> => {
     try {
       const response = await apiClient.patch<Booking>(`/bookings/${bookingId}/status`, { status });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const bookings = getStoredBookings();
       const idx = bookings.findIndex((b) => b.id === bookingId);

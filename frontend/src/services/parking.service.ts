@@ -7,7 +7,7 @@ export const parkingService = {
   searchParking: async (filters: ParkingSearchFilters): Promise<ParkingLocation[]> => {
     try {
       const response = await apiClient.get<ParkingLocation[]>('/parking/search', { params: filters });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       console.warn('Backend unavailable, querying local parking catalog', err);
       let list = getStoredParkingLocations().filter(
@@ -59,7 +59,7 @@ export const parkingService = {
   getParkingById: async (id: string): Promise<ParkingLocation | null> => {
     try {
       const response = await apiClient.get<ParkingLocation>(`/parking/${id}`);
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const list = getStoredParkingLocations();
       return list.find((p) => p.id === id) || null;
@@ -69,7 +69,7 @@ export const parkingService = {
   getOwnerListings: async (ownerId: string): Promise<ParkingLocation[]> => {
     try {
       const response = await apiClient.get<ParkingLocation[]>(`/parking/owner/${ownerId}`);
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const list = getStoredParkingLocations();
       return list.filter((p) => p.ownerId === ownerId);
@@ -79,7 +79,7 @@ export const parkingService = {
   getAllListings: async (): Promise<ParkingLocation[]> => {
     try {
       const response = await apiClient.get<ParkingLocation[]>('/parking/admin/all');
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       return getStoredParkingLocations();
     }
@@ -88,7 +88,7 @@ export const parkingService = {
   createListing: async (ownerId: string, ownerName: string, data: ParkingListingFormData): Promise<ParkingLocation> => {
     try {
       const response = await apiClient.post<ParkingLocation>('/parking', { ...data, ownerId });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const list = getStoredParkingLocations();
       const newListing: ParkingLocation = {
@@ -134,7 +134,7 @@ export const parkingService = {
   updateListing: async (id: string, data: Partial<ParkingLocation>): Promise<ParkingLocation> => {
     try {
       const response = await apiClient.put<ParkingLocation>(`/parking/${id}`, data);
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const list = getStoredParkingLocations();
       const index = list.findIndex((p) => p.id === id);
@@ -155,7 +155,7 @@ export const parkingService = {
         status,
         rejectionReason,
       });
-      return response.data;
+      return (response.data as any)?.data ?? response.data;
     } catch (err) {
       const list = getStoredParkingLocations();
       const index = list.findIndex((p) => p.id === id);

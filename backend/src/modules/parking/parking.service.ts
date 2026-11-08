@@ -65,13 +65,13 @@ export class ParkingService {
     let listings = await ParkingLocationModel.find(query);
 
     // Compute approximate distance if user coordinates provided
-    const results = listings.map((l) => {
-      const json = l.toJSON();
+    const results: Record<string, any>[] = listings.map((l) => {
+      const json: Record<string, any> = l.toJSON();
       if (filters.latitude !== undefined && filters.longitude !== undefined) {
         const lat1 = filters.latitude;
         const lon1 = filters.longitude;
-        const lat2 = l.location.coordinates[1];
-        const lon2 = l.location.coordinates[0];
+        const lat2 = (l.location as any).coordinates[1];
+        const lon2 = (l.location as any).coordinates[0];
         json.distanceKm = this.calculateHaversineDistance(lat1, lon1, lat2, lon2);
       }
       return json;
