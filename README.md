@@ -67,6 +67,9 @@ npm install
 # Copy environment template
 cp .env.example .env
 
+# For an administrator account, set ADMIN_BOOTSTRAP_EMAIL and
+# ADMIN_BOOTSTRAP_PASSWORD in backend/.env before starting the server.
+
 # Run development server with live reload
 npm run dev
 
@@ -80,7 +83,9 @@ npm run build
 npm start
 ```
 
-*Note*: If `MONGODB_URI` is not reachable locally, the backend automatically boots an in-memory replica set for frictionless zero-config local development.
+The bootstrap variables create an administrator account from the trusted server process when that email does not already exist. Existing administrator accounts are left unchanged. Use a unique password of at least 12 characters. Public registration only accepts driver and owner roles. Production deployments must also set unique `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` values (at least 32 characters each).
+
+The backend connects to the `MONGODB_URI` exactly as configured and stops with a connection error if MongoDB is unavailable. This avoids silently writing registrations to temporary in-memory storage.
 
 ### 2. Frontend Setup
 

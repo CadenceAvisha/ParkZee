@@ -8,6 +8,7 @@ import {
   Shield,
   Building,
   UserCheck,
+  LayoutDashboard,
   LogOut,
   Menu,
   X,
@@ -21,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, role, logout, switchDemoRole, isAuthenticated } = useAuth();
+  const { user, role, logout, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const navigate = useNavigate();
@@ -32,12 +33,9 @@ export const Navbar: React.FC = () => {
     navigate('/login');
   };
 
-  const handleSwitchRole = async (targetRole: 'driver' | 'owner' | 'admin') => {
-    await switchDemoRole(targetRole);
-    navigate(`/${targetRole}/dashboard`);
-  };
-
   const isActive = (path: string) => location.pathname === path;
+  const dashboardPath = role === 'admin' ? '/admin/dashboard' : role === 'owner' ? '/owner/dashboard' : '/driver/dashboard';
+  const profilePath = role === 'admin' ? '/admin/profile' : role === 'owner' ? '/owner/profile' : '/driver/profile';
 
   return (
     <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all">
@@ -191,44 +189,6 @@ export const Navbar: React.FC = () => {
 
           {/* Right Action Section */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Perspective / Demo Switcher Pill */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase px-2">Role:</span>
-              <button
-                type="button"
-                onClick={() => handleSwitchRole('driver')}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
-                  role === 'driver'
-                    ? 'bg-white text-brand-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Driver
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSwitchRole('owner')}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
-                  role === 'owner'
-                    ? 'bg-white text-brand-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Owner
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSwitchRole('admin')}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
-                  role === 'admin'
-                    ? 'bg-white text-brand-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Admin
-              </button>
-            </div>
-
             {isAuthenticated && user ? (
               <div className="relative">
                 <button
@@ -264,12 +224,21 @@ export const Navbar: React.FC = () => {
                     </div>
 
                     <Link
-                      to={role === 'owner' ? '/owner/profile' : '/driver/profile'}
+                      to={profilePath}
                       onClick={() => setProfileDropdownOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                     >
                       <UserCheck className="w-4 h-4 text-slate-400" />
-                      Account Profile
+                      Profile
+                    </Link>
+
+                    <Link
+                      to={dashboardPath}
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-slate-400" />
+                      Dashboard
                     </Link>
 
                     {role === 'owner' && (
@@ -305,13 +274,13 @@ export const Navbar: React.FC = () => {
                   to="/login"
                   className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900"
                 >
-                  Sign In
+                  Login
                 </Link>
                 <Link
                   to="/register"
                   className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm"
                 >
-                  Register
+                  Sign Up
                 </Link>
               </div>
             )}
@@ -332,45 +301,6 @@ export const Navbar: React.FC = () => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <span className="text-xs font-semibold text-slate-500">Active View:</span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => {
-                  handleSwitchRole('driver');
-                  setMobileMenuOpen(false);
-                }}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium ${
-                  role === 'driver' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                Driver
-              </button>
-              <button
-                onClick={() => {
-                  handleSwitchRole('owner');
-                  setMobileMenuOpen(false);
-                }}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium ${
-                  role === 'owner' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                Owner
-              </button>
-              <button
-                onClick={() => {
-                  handleSwitchRole('admin');
-                  setMobileMenuOpen(false);
-                }}
-                className={`text-xs px-2.5 py-1 rounded-md font-medium ${
-                  role === 'admin' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                Admin
-              </button>
-            </div>
-          </div>
-
           <div className="space-y-1">
             <Link
               to="/search"
@@ -479,16 +409,21 @@ export const Navbar: React.FC = () => {
 
           <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
             {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogout();
-                }}
-                className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-rose-600 font-medium"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
+              <>
+                <Link to={profilePath} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">
+                  <UserCheck className="w-4 h-4 text-slate-400" /> Profile <span className="ml-auto text-xs capitalize text-slate-500">{role}</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-rose-600 font-medium"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </button>
+              </>
             ) : (
               <>
                 <Link
@@ -496,14 +431,14 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full text-center py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg"
                 >
-                  Sign In
+                  Login
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full text-center py-2 text-sm font-medium text-white bg-brand-600 rounded-lg"
                 >
-                  Register
+                  Sign Up
                 </Link>
               </>
             )}

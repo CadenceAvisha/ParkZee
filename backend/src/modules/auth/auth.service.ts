@@ -19,6 +19,9 @@ export class AuthService {
     role: UserRole;
     password: string;
   }): Promise<{ user: any; token: string; refreshToken: string }> {
+    if (data.role !== UserRole.DRIVER && data.role !== UserRole.OWNER) {
+      throw new AppError('Public registration is limited to driver and owner accounts.', 400);
+    }
     const existing = await User.findOne({ email: data.email });
     if (existing) {
       throw new AppError('An account with this email address already exists.', 409);

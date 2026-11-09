@@ -3,10 +3,14 @@ import { AuthResponse, User } from '../types/user.types';
 import { LoginFormData, RegisterFormData } from '../schemas/auth.schema';
 
 export const authService = {
-  login: async (credentials: LoginFormData): Promise<AuthResponse> => {
+  login: async (credentials: LoginFormData, expectedRole?: User['role']): Promise<AuthResponse> => {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
       const authData = response.data;
+      if (expectedRole && authData.user?.role !== expectedRole) {
+        const roleName = authData.user?.role === 'owner' ? 'Parking Owner' : authData.user?.role === 'admin' ? 'Administrator' : 'User / Driver';
+        throw new Error(`This email belongs to a ${roleName} account. Choose that account type to continue.`);
+      }
       if (authData?.token) {
         localStorage.setItem('parkzee_token', authData.token);
         localStorage.setItem('parkzee_user', JSON.stringify(authData.user));

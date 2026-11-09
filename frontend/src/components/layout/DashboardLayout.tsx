@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
-  const { user, role, logout, switchDemoRole } = useAuth();
+  const { user, role, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -111,52 +111,6 @@ export const DashboardLayout: React.FC = () => {
                 </span>
               </div>
             </Link>
-          </div>
-
-          {/* Role Switching Shortcut for rapid demonstration */}
-          <div className="px-4 py-3 border-b border-slate-800/60 bg-slate-950/40">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
-              <span>View Mode</span>
-              <span className="text-[9px] text-brand-400 font-mono">Instant Switch</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1">
-              <button
-                type="button"
-                onClick={() => {
-                  switchDemoRole('driver');
-                  navigate('/driver/dashboard');
-                }}
-                className={`text-[11px] py-1 rounded font-medium transition-colors ${
-                  role === 'driver' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                Driver
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  switchDemoRole('owner');
-                  navigate('/owner/dashboard');
-                }}
-                className={`text-[11px] py-1 rounded font-medium transition-colors ${
-                  role === 'owner' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                Owner
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  switchDemoRole('admin');
-                  navigate('/admin/dashboard');
-                }}
-                className={`text-[11px] py-1 rounded font-medium transition-colors ${
-                  role === 'admin' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                Admin
-              </button>
-            </div>
           </div>
 
           {/* Navigation Links */}

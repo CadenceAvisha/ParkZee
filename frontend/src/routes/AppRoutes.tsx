@@ -35,6 +35,7 @@ import { AdminListingsPage } from '../pages/admin/AdminListingsPage';
 import { AdminBookingsPage } from '../pages/admin/AdminBookingsPage';
 import { AdminReportsPage } from '../pages/admin/AdminReportsPage';
 import { AdminAnalyticsPage } from '../pages/admin/AdminAnalyticsPage';
+import { AdminProfilePage } from '../pages/admin/AdminProfilePage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -51,7 +52,7 @@ export const AppRoutes: React.FC = () => {
         <Route
           path="/booking/:parkingId"
           element={
-            <ProtectedRoute allowedRoles={['driver', 'owner', 'admin']}>
+            <ProtectedRoute allowedRoles={['driver']}>
               <BookingCheckoutPage />
             </ProtectedRoute>
           }
@@ -106,6 +107,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="bookings" element={<AdminBookingsPage />} />
         <Route path="reports" element={<AdminReportsPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
+        <Route path="profile" element={<AdminProfilePage />} />
       </Route>
 
       {/* Catch-all redirect */}

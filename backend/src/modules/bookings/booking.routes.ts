@@ -16,17 +16,19 @@ router.use(authenticate);
 
 router.post(
   '/',
+  authorize([UserRole.DRIVER]),
   validate(createBookingValidationSchema),
   bookingController.create
 );
 
-router.get('/driver/:driverId', bookingController.getDriverBookings);
+router.get('/driver/:driverId', authorize([UserRole.DRIVER, UserRole.ADMIN]), bookingController.getDriverBookings);
 router.get('/owner/:ownerId', authorize([UserRole.OWNER, UserRole.ADMIN]), bookingController.getOwnerBookings);
 router.get('/admin/all', authorize([UserRole.ADMIN]), bookingController.getAllBookings);
 router.get('/:bookingId', bookingController.getById);
 
 router.post(
   '/:bookingId/cancel',
+  authorize([UserRole.DRIVER]),
   validate(cancelBookingValidationSchema),
   bookingController.cancel
 );

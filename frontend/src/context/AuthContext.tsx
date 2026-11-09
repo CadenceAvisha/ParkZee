@@ -9,10 +9,9 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: LoginFormData) => Promise<User>;
+  login: (data: LoginFormData, expectedRole?: UserRole) => Promise<User>;
   register: (data: RegisterFormData) => Promise<User>;
   logout: () => void;
-  switchDemoRole: (role: UserRole) => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,10 +50,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  const login = async (data: LoginFormData): Promise<User> => {
+  const login = async (data: LoginFormData, expectedRole?: UserRole): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await authService.login(data);
+      const res = await authService.login(data, expectedRole);
       setUser(res.user);
       setToken(res.token);
       return res.user;
@@ -81,25 +80,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(null);
   };
 
-  const switchDemoRole = async (targetRole: UserRole): Promise<User | null> => {
-    setIsLoading(true);
-    try {
-      const email = `${targetRole.toLowerCase()}@parkzee.com`;
-      const res = await authService.login({
-        email,
-        password: 'Password123!',
-      });
-      setUser(res.user);
-      setToken(res.token);
-      return res.user;
-    } catch (err) {
-      console.error('Failed to switch demo role via real backend API:', err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -111,7 +91,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         register,
         logout,
-        switchDemoRole,
       }}
     >
       {children}

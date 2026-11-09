@@ -220,3 +220,39 @@ Submits a 1-5 star review for an eligible `COMPLETED` booking. Recalculates aver
 - `PATCH /admin/users/:userId/status`: Suspend or reactivate user accounts.
 - `GET /admin/reports`: List all filed user reports.
 - `PATCH /admin/reports/:reportId/resolve`: Record resolution notes and close ticket.
+
+## 8. Additional Implemented Endpoints
+
+These routes are also mounted by the server. Protected routes require a bearer token; role restrictions are noted where applicable.
+
+### Authentication
+
+- `POST /auth/forgot-password`: Request a password reset email. Body: `{ "email": "ravi@example.com" }`.
+- `POST /auth/reset-password`: Set a new password using the reset token. Body: `{ "token": "...", "password": "..." }`.
+
+### Users (`/api/users`)
+
+- `GET /users`: List users (admin only).
+- `GET /users/:id`: Retrieve a user profile (authenticated).
+- `PATCH /users/profile`: Update the authenticated user's profile.
+- `PATCH /users/:id/status`: Change a user's account status (admin only).
+
+### Parking
+
+- `GET /parking/owner/:ownerId`: List an owner's parking facilities (owner or admin).
+- `GET /parking/admin/all`: List all facilities for review (admin only).
+- `PUT /parking/:id`: Update a facility (owner or admin; ownership is enforced by the service).
+- `DELETE /parking/:id`: Delete a facility (owner or admin; ownership is enforced by the service).
+- `POST /parking/upload`: Upload a facility photo (owner or admin; multipart form field `image`).
+
+### Bookings (`/api/bookings`)
+
+- `GET /bookings/admin/all`: List all bookings (admin only).
+- `GET /bookings/:bookingId`: Retrieve a booking accessible to the authenticated user.
+- `PATCH /bookings/:bookingId/status`: Update a booking status (owner or admin).
+
+### Reports and reviews
+
+- `GET /reports`: List reports (admin only).
+- `PATCH /reports/:reportId/resolve`: Resolve a report (admin only). Body: `{ "status": "pending" | "in_review" | "resolved" | "dismissed", "resolutionNotes": "..." }`.
+- `GET /reviews/parking/:parkingId`: List reviews for a facility.

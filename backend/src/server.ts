@@ -11,7 +11,7 @@ const startServer = async (): Promise<void> => {
     console.log('[ParkZee] Initializing database connection...');
     await connectDatabase();
 
-    // Seed default administrative, host, driver accounts and parking facilities if empty
+    // Provision only the trusted administrator configured in the server environment.
     if (process.env.NODE_ENV !== 'test') {
       await seedDatabase();
     }

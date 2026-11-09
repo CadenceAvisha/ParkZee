@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { reviewController } from './review.controller.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { validate } from '../../middleware/validate.js';
+import { authorize } from '../../middleware/authorize.js';
+import { UserRole } from '../../types/index.js';
 
 const router = Router();
 
@@ -12,7 +14,7 @@ const createReviewSchema = z.object({
   comment: z.string().max(1000).optional(),
 });
 
-router.post('/', authenticate, validate(createReviewSchema), reviewController.create);
+router.post('/', authenticate, authorize([UserRole.DRIVER]), validate(createReviewSchema), reviewController.create);
 router.get('/parking/:parkingId', reviewController.getByParking);
 
 export const reviewRoutes = router;

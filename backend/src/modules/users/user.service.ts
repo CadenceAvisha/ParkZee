@@ -43,9 +43,14 @@ export class UserService {
   }
 
   async updateProfile(id: string, data: { name?: string; phone?: string; profileImage?: string }): Promise<any> {
+    const allowedProfileFields = {
+      ...(typeof data.name === 'string' ? { name: data.name } : {}),
+      ...(typeof data.phone === 'string' ? { phone: data.phone } : {}),
+      ...(typeof data.profileImage === 'string' ? { profileImage: data.profileImage } : {}),
+    };
     const user = await User.findByIdAndUpdate(
       id,
-      { $set: data },
+      { $set: allowedProfileFields },
       { new: true, runValidators: true }
     );
     if (!user) {

@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from './user.service.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import { UserRole } from '../../types/index.js';
 
 export class UserController {
   async getAllUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -20,6 +22,9 @@ export class UserController {
 
   async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      if (req.user?.id !== req.params.id && req.user?.role !== UserRole.ADMIN) {
+        throw new AppError('You can only view your own profile.', 403);
+      }
       const user = await userService.getUserById(req.params.id);
       res.status(200).json({
         success: true,

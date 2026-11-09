@@ -1,172 +1,86 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Building2, CarFront, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { loginSchema, LoginFormData } from '../../schemas/auth.schema';
+import { UserRole } from '../../types/user.types';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
-import { Car, Lock, Mail, Eye, EyeOff, ShieldCheck, UserCheck } from 'lucide-react';
+
+const loginRoles: { role: UserRole; title: string; detail: string; Icon: typeof CarFront }[] = [
+  { role: 'driver', title: 'User / Driver', detail: 'Find and reserve a space', Icon: CarFront },
+  { role: 'owner', title: 'Parking Owner', detail: 'Manage your parking spaces', Icon: Building2 },
+  { role: 'admin', title: 'Administrator', detail: 'Manage ParkZee', Icon: ShieldCheck },
+];
+
+const dashboardFor = (role: UserRole) => role === 'admin' ? '/admin/dashboard' : role === 'owner' ? '/owner/dashboard' : '/driver/dashboard';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [selectedRole, setSelectedRole] = useState<UserRole>('driver');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<LoginFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: 'driver@parkzee.com',
-      password: 'Password123!',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     try {
-      const user = await login(data);
-      showToast('success', 'Welcome Back!', `Logged in successfully as ${user.name}`);
-      const from = (location.state as any)?.from?.pathname;
-      if (from) {
-        navigate(from, { replace: true });
-      } else {
-        const dest =
-          user.role === 'admin'
-            ? '/admin/dashboard'
-            : user.role === 'owner'
-            ? '/owner/dashboard'
-            : '/driver/dashboard';
-        navigate(dest, { replace: true });
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Login failed';
-      showToast('error', 'Authentication Failed', message);
+      const user = await login(data, selectedRole);
+      showToast('success', 'Welcome to ParkZee', `Signed in as ${user.name}`);
+      navigate(dashboardFor(user.role), { replace: true });
+    } catch (err) {
+      showToast('error', 'Could not sign in', err instanceof Error ? err.message : 'Please check your details and try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleFillDemo = (email: string) => {
-    setValue('email', email);
-    setValue('password', 'Password123!');
-  };
-
   return (
-    <div className="min-h-[80vh] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link to="/" className="inline-flex items-center gap-2 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-md">
-            <Car className="w-5 h-5" />
-          </div>
-          <span className="text-2xl font-bold text-slate-900 tracking-tight">
-            Park<span className="text-brand-600">Zee</span>
-          </span>
-        </Link>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Sign in to your account</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Or{' '}
-          <Link to="/register" className="font-semibold text-brand-600 hover:text-brand-700">
-            register for a new Driver or Owner account
+    <main className="mx-auto flex min-h-[78vh] max-w-6xl items-center px-4 py-12 sm:px-6">
+      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-xl shadow-stone-900/5 md:grid-cols-[.9fr_1.1fr]">
+        <aside className="hidden flex-col justify-between bg-[#102b22] p-10 text-white md:flex">
+          <Link to="/" className="inline-flex items-center gap-3 self-start" aria-label="ParkZee home">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500"><CarFront className="h-6 w-6" /></span>
+            <span className="text-2xl font-semibold tracking-tight">Park<span className="text-emerald-300">Zee</span></span>
           </Link>
-        </p>
-      </div>
+          <div><p className="text-sm font-medium text-emerald-300">Good to have you back</p><h1 className="mt-3 text-4xl font-semibold leading-tight">Your next stop starts here.</h1><p className="mt-4 max-w-sm text-sm leading-6 text-emerald-50/75">Sign in to find a space, manage your property, or take care of the ParkZee community.</p></div>
+          <p className="text-xs text-emerald-100/60">Parking made a little easier.</p>
+        </aside>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-8 px-6 shadow-premium rounded-2xl border border-slate-200/80 sm:px-10">
-          {/* 1-Click Quick Demo Switcher */}
-          <div className="mb-6 pb-6 border-b border-slate-100">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">
-              Quick Test Demo Credentials
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleFillDemo('driver@parkzee.com')}
-                className="text-[11px] py-1.5 px-2 bg-slate-50 hover:bg-brand-50 border border-slate-200 hover:border-brand-300 rounded-lg font-medium text-slate-700 transition-colors"
-              >
-                🚗 Driver
+        <section className="p-6 sm:p-10 lg:p-12">
+          <Link to="/" className="mb-8 inline-flex items-center gap-2 md:hidden"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-700 text-white"><CarFront className="h-5 w-5" /></span><span className="text-xl font-semibold">Park<span className="text-emerald-700">Zee</span></span></Link>
+          <p className="text-sm font-medium text-emerald-800">Welcome back</p>
+          <h2 className="mt-1 text-3xl font-semibold tracking-tight text-stone-950">Sign in to ParkZee</h2>
+          <p className="mt-2 text-sm text-stone-600">Choose your account type to continue.</p>
+
+          <div className="mt-6 grid grid-cols-3 gap-2" role="group" aria-label="Account type">
+            {loginRoles.map(({ role, title, detail, Icon }) => (
+              <button key={role} type="button" aria-pressed={selectedRole === role} onClick={() => setSelectedRole(role)} className={`flex min-h-[104px] flex-col items-center justify-center rounded-xl border px-2 py-3 text-center transition ${selectedRole === role ? 'border-emerald-700 bg-emerald-50 text-emerald-950 ring-1 ring-emerald-700' : 'border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50'}`}>
+                <Icon className={`mb-2 h-5 w-5 ${selectedRole === role ? 'text-emerald-800' : 'text-stone-400'}`} />
+                <span className="text-xs font-semibold sm:text-sm">{title}</span>
+                <span className="mt-1 hidden text-[11px] text-stone-500 sm:block">{detail}</span>
               </button>
-              <button
-                type="button"
-                onClick={() => handleFillDemo('owner@parkzee.com')}
-                className="text-[11px] py-1.5 px-2 bg-slate-50 hover:bg-brand-50 border border-slate-200 hover:border-brand-300 rounded-lg font-medium text-slate-700 transition-colors"
-              >
-                🏢 Owner
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFillDemo('admin@parkzee.com')}
-                className="text-[11px] py-1.5 px-2 bg-slate-50 hover:bg-brand-50 border border-slate-200 hover:border-brand-300 rounded-lg font-medium text-slate-700 transition-colors"
-              >
-                🛡️ Admin
-              </button>
-            </div>
+            ))}
           </div>
+          {selectedRole === 'admin' && <p className="mt-2 text-xs text-stone-500">Administrator accounts are created by ParkZee. Public sign-up is not available for this role.</p>}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Email Address"
-              type="email"
-              autoComplete="email"
-              placeholder="name@example.com"
-              leftIcon={<Mail className="w-4 h-4" />}
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <div>
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  leftIcon={<Lock className="w-4 h-4" />}
-                  error={errors.password?.message}
-                  rightIcon={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="focus:outline-none text-slate-400 hover:text-slate-600"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  }
-                  {...register('password')}
-                />
-              </div>
-
-              <div className="flex items-center justify-end mt-2">
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-brand-600 hover:text-brand-700"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              className="w-full mt-2"
-              isLoading={isSubmitting}
-            >
-              Sign In
-            </Button>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-4">
+            <Input label="Email address" type="email" autoComplete="username" placeholder="you@example.com" leftIcon={<Mail className="h-4 w-4" />} error={errors.email?.message} {...register('email')} />
+            <Input label="Password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Your password" leftIcon={<LockKeyhole className="h-4 w-4" />} error={errors.password?.message} rightIcon={<button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)} className="text-stone-400 hover:text-stone-700">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>} {...register('password')} />
+            <div className="-mt-1 flex justify-end"><Link to="/forgot-password" className="text-sm font-medium text-emerald-800 hover:text-emerald-950">Forgot password?</Link></div>
+            <Button type="submit" variant="primary" size="md" className="w-full !bg-emerald-800 hover:!bg-emerald-900" isLoading={isSubmitting}>Sign in</Button>
           </form>
-        </div>
+          <p className="mt-6 text-center text-sm text-stone-600">New to ParkZee? <Link to="/register" className="font-semibold text-emerald-800 hover:text-emerald-950">Create an account</Link></p>
+        </section>
       </div>
-    </div>
+    </main>
   );
 };

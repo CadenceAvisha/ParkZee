@@ -1,412 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  Search,
-  MapPin,
-  Calendar,
-  Clock,
-  Car,
-  ShieldCheck,
-  CheckCircle2,
-  DollarSign,
-  QrCode,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  Building,
-  UserCheck,
-  Smartphone,
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, CarFront, Clock3, MapPin, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { ParkingCard } from '../../components/parking/ParkingCard';
 import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
 import { parkingService } from '../../services/parking.service';
 import { ParkingLocation } from '../../types/parking.types';
-import { VehicleType } from '../../types/user.types';
+import heroImage from '../../assets/hero.png';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const [featuredLocations, setFeaturedLocations] = useState<ParkingLocation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [locationQuery, setLocationQuery] = useState('');
-  const [vehicleType, setVehicleType] = useState<VehicleType>('car');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [startTime, setStartTime] = useState('10:00');
-  const [endTime, setEndTime] = useState('14:00');
+  const [locations, setLocations] = useState<ParkingLocation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
-    setIsLoading(true);
-    parkingService
-      .searchParking({ sortBy: 'rating' })
-      .then((results) => {
-        if (results && results.length > 0) {
-          setFeaturedLocations(results.slice(0, 3));
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        setIsLoading(false);
-      });
+    parkingService.searchParking({ sortBy: 'rating' })
+      .then((results) => setLocations(results.slice(0, 3)))
+      .catch(() => setLocations([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleHeroSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams({
-      q: locationQuery,
-      vehicle: vehicleType,
-      date,
-      start: startTime,
-      end: endTime,
-    });
-    navigate(`/search?${params.toString()}`);
+  const search = (event: React.FormEvent) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (query.trim()) params.set('q', query.trim());
+    navigate(`/search${params.size ? `?${params}` : ''}`);
   };
 
   return (
-    <div className="space-y-16 lg:space-y-24 pb-16">
-      {/* Hero Section */}
-      <section className="relative pt-12 lg:pt-20 pb-16 bg-gradient-to-b from-brand-50/60 via-slate-50 to-white overflow-hidden border-b border-slate-200/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100/70 border border-brand-200 text-brand-800 text-xs font-semibold uppercase tracking-wider mb-5">
-              <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-              <span>Next-Gen Smart Mobility & Parking Marketplace</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight sm:leading-none">
-              Park without the hassle.{' '}
-              <span className="text-brand-600">Reserve spot, pay directly.</span>
-            </h1>
-            <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed">
-              Find and lock your parking space in advance with zero online booking fees. Settle directly with the property owner upon arrival via Cash or UPI.
-            </p>
-          </div>
-
-          {/* Main Search Interface Card */}
-          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-premium border border-slate-200/80 p-4 sm:p-6">
-            <form onSubmit={handleHeroSearch} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                {/* Location */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-brand-600" /> Destination / Area
-                  </label>
-                  <input
-                    type="text"
-                    value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    placeholder="Enter city, metro station, or landmark..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500"
-                  />
-                </div>
-
-                {/* Date */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-brand-600" /> Date
-                  </label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500 bg-white"
-                  />
-                </div>
-
-                {/* Vehicle Type */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Car className="w-3.5 h-3.5 text-brand-600" /> Vehicle
-                  </label>
-                  <select
-                    value={vehicleType}
-                    onChange={(e) => setVehicleType(e.target.value as VehicleType)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500 bg-white"
-                  >
-                    <option value="car">Car (Sedan/Hatch)</option>
-                    <option value="suv">SUV / MUV</option>
-                    <option value="motorcycle">Two Wheeler / Bike</option>
-                    <option value="ev">Electric Vehicle (EV)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Time Interval & Submit */}
-              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs text-slate-500 font-medium">Arrival:</span>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-1 focus:ring-brand-500 focus:outline-none"
-                    />
-                  </div>
-                  <span className="text-slate-300">to</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-slate-500 font-medium">Departure:</span>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium focus:ring-1 focus:ring-brand-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="md"
-                  className="w-full sm:w-auto px-8"
-                  leftIcon={<Search className="w-4 h-4" />}
-                >
-                  Find Available Spaces
-                </Button>
-              </div>
+    <div className="pb-20">
+      <section className="border-b border-stone-200 bg-[#f4f3ed]">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
+          <div className="max-w-xl">
+            <p className="mb-5 text-sm font-semibold tracking-wide text-emerald-800">Parking, sorted.</p>
+            <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-stone-950 sm:text-6xl">A good spot makes the whole trip easier.</h1>
+            <p className="mt-6 max-w-lg text-base leading-7 text-stone-600">Find a space near where you’re going, reserve it ahead of time, and pay the owner when you arrive.</p>
+            <form onSubmit={search} className="mt-8 flex max-w-lg flex-col gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm sm:flex-row">
+              <label className="flex min-w-0 flex-1 items-center gap-3 px-3">
+                <MapPin className="h-5 w-5 shrink-0 text-emerald-700" />
+                <span className="sr-only">Area or destination</span>
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Where are you headed?" className="h-12 w-full border-0 bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />
+              </label>
+              <Button type="submit" variant="primary" size="md" className="h-12 px-6">Find parking <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </form>
+            <p className="mt-3 text-xs text-stone-500">Browse available spaces before you book.</p>
+          </div>
+          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+            <img src={heroImage} alt="A car parked in a calm, tree-lined city street" className="h-[300px] w-full rounded-[2rem] object-cover sm:h-[390px]" />
+            <div className="absolute -bottom-5 left-5 flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-md sm:left-8">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-800"><CarFront className="h-5 w-5" /></span>
+              <span><span className="block text-sm font-semibold text-stone-900">Your space, held</span><span className="block text-xs text-stone-500">Pay directly on arrival</span></span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it Works Section */}
-      <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            How Direct Smart Parking Works
-          </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            A frictionless, transparent 4-step workflow engineered for trust and speed.
-          </p>
+      <section className="mx-auto max-w-7xl px-5 pt-20 sm:px-8">
+        <div className="mb-8 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div><p className="text-sm font-medium text-emerald-800">A place to start</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">Parking people have listed nearby</h2></div>
+          <Link to="/search" className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-950">See all spaces <ArrowRight className="h-4 w-4" /></Link>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-subtle relative">
-            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center font-bold text-sm mb-4">
-              1
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mb-2">Search & Compare</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Explore real-time verified parking facilities, prices, amenities, and walking distance to your destination.
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-subtle relative">
-            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center font-bold text-sm mb-4">
-              2
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mb-2">Reserve Slot Free</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Lock your time interval instantly. No payment card or gateway fees needed at the time of reservation.
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-subtle relative">
-            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center font-bold text-sm mb-4">
-              3
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mb-2">Pay Directly on Arrival</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Arrive at the location and pay the parking owner directly via UPI or Cash. The owner confirms receipt in their app.
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-subtle relative">
-            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center font-bold text-sm mb-4">
-              4
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mb-2">Instant QR Entry</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Your official entry QR code activates immediately upon owner confirmation. Attendant scans code for secure check-in.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Parking Locations */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Featured Verified Parking Spaces
-            </h2>
-            <p className="text-sm text-slate-600 mt-1">
-              Top-rated commercial and private lots ready for reservation
-            </p>
-          </div>
-          <Link
-            to="/search"
-            className="text-xs font-bold text-brand-700 hover:text-brand-800 flex items-center gap-1.5"
-          >
-            <span>View All Nearby Locations</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {isLoading ? (
-          <LoadingSkeleton count={3} className="h-64 w-full" />
-        ) : featuredLocations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredLocations.map((location) => (
-              <ParkingCard key={location.id} location={location} />
-            ))}
-          </div>
+        {loading ? <LoadingSkeleton count={3} className="h-64 w-full" /> : locations.length ? (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">{locations.map((location) => <ParkingCard key={location.id} location={location} />)}</div>
         ) : (
-          <div className="p-8 text-center bg-slate-50 border border-slate-200/80 rounded-2xl">
-            <MapPin className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <h3 className="text-sm font-bold text-slate-800">Verified Parking Facilities</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-              Use our interactive search to discover nearby available parking spaces, or register as a host to list your property.
-            </p>
-            <div className="mt-4 flex justify-center gap-3">
-              <Button variant="primary" size="sm" onClick={() => navigate('/search')}>
-                Explore Map
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => navigate('/register')}>
-                Host Parking
-              </Button>
-            </div>
-          </div>
+          <div className="rounded-2xl border border-stone-200 bg-stone-50 px-6 py-10 text-center"><MapPin className="mx-auto h-7 w-7 text-stone-400" /><h3 className="mt-3 font-semibold text-stone-900">No spaces to feature just yet</h3><p className="mt-1 text-sm text-stone-600">Search another area or check back soon.</p><Button variant="secondary" size="sm" className="mt-4" onClick={() => navigate('/search')}>Browse the map</Button></div>
         )}
       </section>
 
-      {/* Dual Value Propositions: Drivers vs Owners */}
-      <section className="bg-slate-900 text-white py-16 lg:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* For Drivers */}
-            <div className="bg-slate-800/80 p-8 rounded-3xl border border-slate-700 space-y-6">
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-400 bg-brand-950/60 px-3 py-1 rounded-full border border-brand-800">
-                <Car className="w-3.5 h-3.5" /> For Commuters & Drivers
-              </div>
-              <h3 className="text-2xl font-bold tracking-tight">
-                Never circle the block looking for parking again
-              </h3>
-              <ul className="space-y-3.5 text-xs text-slate-300">
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
-                  <span><strong>Zero upfront payment:</strong> Reserve without entering bank cards or paying commission surcharges.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
-                  <span><strong>Guaranteed availability:</strong> Our double-booking prevention engine ensures your spot is reserved.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
-                  <span><strong>Secure QR authorization:</strong> Encrypted QR code ensures seamless check-in at the gate.</span>
-                </li>
-              </ul>
-              <Link
-                to="/search"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-sm transition-colors"
-              >
-                Find Parking Now <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            {/* For Owners */}
-            <div className="bg-slate-800/80 p-8 rounded-3xl border border-slate-700 space-y-6">
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-400 bg-teal-950/60 px-3 py-1 rounded-full border border-teal-800">
-                <Building className="w-3.5 h-3.5" /> For Property Owners
-              </div>
-              <h3 className="text-2xl font-bold tracking-tight">
-                Monetize your empty driveway, basement, or parking lot
-              </h3>
-              <ul className="space-y-3.5 text-xs text-slate-300">
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                  <span><strong>100% Direct revenue retention:</strong> Keep all earnings directly from drivers via cash or UPI.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                  <span><strong>Complete schedule control:</strong> Define operating hours, vehicle types, and block unrentable days anytime.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                  <span><strong>Built-in QR scanner:</strong> Use our attendant scanner to verify booking tickets in under 2 seconds.</span>
-                </li>
-              </ul>
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold shadow-sm transition-colors"
-              >
-                List Your Parking Space <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+      <section className="mx-auto mt-20 max-w-7xl px-5 sm:px-8">
+        <div className="rounded-3xl bg-stone-950 px-6 py-10 text-white sm:px-10 sm:py-12">
+          <div className="max-w-xl"><p className="text-sm font-medium text-emerald-300">Straightforward from start to finish</p><h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Reserve now. Settle up when you get there.</h2></div>
+          <div className="mt-8 grid gap-8 md:grid-cols-3">
+            <div><MapPin className="h-5 w-5 text-emerald-300" /><h3 className="mt-3 font-semibold">Choose a space</h3><p className="mt-1 text-sm leading-6 text-stone-300">Compare location, hourly price, and the details that matter to you.</p></div>
+            <div><Clock3 className="h-5 w-5 text-emerald-300" /><h3 className="mt-3 font-semibold">Reserve your time</h3><p className="mt-1 text-sm leading-6 text-stone-300">Book a spot for your visit without paying online upfront.</p></div>
+            <div><ShieldCheck className="h-5 w-5 text-emerald-300" /><h3 className="mt-3 font-semibold">Arrive and pay directly</h3><p className="mt-1 text-sm leading-6 text-stone-300">Pay the parking owner on arrival and show your booking for entry.</p></div>
           </div>
         </div>
       </section>
 
-      {/* Trust & Safety Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 shadow-subtle">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <h2 className="text-2xl font-extrabold text-slate-900">
-              Safety, Verification & Transparency
-            </h2>
-            <p className="text-xs text-slate-600 mt-1">
-              Every feature is built with robust operational standards
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div className="p-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-3 border border-brand-200">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Admin Vetted Listings</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Every parking space undergoes administrative review before becoming bookable to ensure real physical presence.
-              </p>
-            </div>
-
-            <div className="p-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-3 border border-brand-200">
-                <QrCode className="w-6 h-6" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Cryptographic QR Tokens</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Tokens are activated exclusively following verified owner payment confirmation and prevent duplicate entry scans.
-              </p>
-            </div>
-
-            <div className="p-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-3 border border-brand-200">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <h4 className="text-sm font-bold text-slate-900 mb-1">Direct Settlement Audit</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Full immutable audit logs timestamping the exact amount, payment method, and owner attestation for every booking.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Call to Action */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-brand-700 to-teal-700 rounded-3xl p-8 sm:p-12 text-center text-white shadow-xl relative overflow-hidden">
-          <h2 className="text-3xl font-extrabold tracking-tight mb-3">
-            Ready to park smarter or earn from your empty space?
-          </h2>
-          <p className="text-sm text-brand-100 max-w-xl mx-auto mb-8">
-            Join thousands of daily drivers and verified parking providers across major metropolitan hubs.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/search"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white text-brand-800 font-bold text-xs shadow-md hover:bg-slate-50 transition-colors"
-            >
-              Explore Parking Nearby
-            </Link>
-            <Link
-              to="/register"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-brand-900/60 hover:bg-brand-900/80 border border-brand-400 text-white font-semibold text-xs transition-colors"
-            >
-              Register as Parking Owner
-            </Link>
-          </div>
-        </div>
+      <section className="mx-auto mt-16 flex max-w-7xl flex-col gap-5 border-t border-stone-200 px-5 pt-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div><h2 className="text-xl font-semibold text-stone-950">Have a space that sits empty?</h2><p className="mt-1 text-sm text-stone-600">List it and manage reservations in one place.</p></div>
+        <Link to="/register" className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 hover:text-emerald-950">Become a parking host <ArrowRight className="h-4 w-4" /></Link>
       </section>
     </div>
   );

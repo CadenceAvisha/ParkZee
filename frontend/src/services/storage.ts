@@ -7,8 +7,6 @@ import { Booking } from '../types/booking.types';
 import { User } from '../types/user.types';
 import { Report } from '../types/report.types';
 import { PaymentConfirmationRecord } from '../types/payment.types';
-import { INITIAL_USERS, INITIAL_PARKING_LOCATIONS, INITIAL_BOOKINGS, INITIAL_REPORTS } from './mockData';
-
 const STORAGE_KEYS = {
   USERS: 'parkzee_users',
   PARKING: 'parkzee_parking_locations',
@@ -17,24 +15,12 @@ const STORAGE_KEYS = {
   REPORTS: 'parkzee_reports',
 };
 
-// Initialize default storage if empty
-export const initializeStorage = () => {
-  if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.PARKING)) {
-    localStorage.setItem(STORAGE_KEYS.PARKING, JSON.stringify(INITIAL_PARKING_LOCATIONS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.BOOKINGS)) {
-    localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(INITIAL_BOOKINGS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
-    localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(INITIAL_REPORTS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.PAYMENTS)) {
-    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify([]));
-  }
+/** Remove records from the retired browser-only sample-data prototype. */
+export const clearLegacyDemoStorage = () => {
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
 };
+
+export const initializeStorage = clearLegacyDemoStorage;
 
 export const getStoredUsers = (): User[] => {
   initializeStorage();
