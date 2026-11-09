@@ -30,6 +30,66 @@ const getParkingMutex = (parkingId: string): Mutex => {
   return mutex;
 };
 
+/**
+ * Cross-instance distributed lease lock backed by MongoDB.
+ * Ensures that if multiple backend instances are deployed behind a load balancer,
+ * concurrent booking allocations for the same parking facility are serialized cluster-wide.
+ */
+const acquireDistributedLock = async (
+  lockKey: string,
+  timeoutMs = 6000,
+  leaseMs = 5000
+): Promise<() => Promise<void>> => {
+  if (mongoose.connection.readyState !== 1) {
+    return async () => {};
+  }
+
+  const startTime = Date.now();
+  const locksCollection = mongoose.connection.collection('distributed_locks');
+
+  while (Date.now() - startTime < timeoutMs) {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + leaseMs);
+
+    try {
+      const result = await locksCollection.findOneAndUpdate(
+        {
+          _id: lockKey as any,
+          $or: [{ expiresAt: { $lte: now } }, { expiresAt: { $exists: false } }],
+        },
+        {
+          $set: { lockedAt: now, expiresAt },
+        },
+        {
+          upsert: true,
+          returnDocument: 'after',
+        }
+      );
+
+      if (result) {
+        return async () => {
+          try {
+            await locksCollection.deleteOne({ _id: lockKey as any });
+          } catch {
+            // Ignore release cleanup error
+          }
+        };
+      }
+    } catch (err: any) {
+      if (err.code !== 11000) {
+        return async () => {};
+      }
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  }
+
+  throw new AppError(
+    'Facility reservation is experiencing heavy concurrent traffic. Please retry in a few moments.',
+    429
+  );
+};
+
 export class BookingService {
   /**
    * Concurrency-safe Booking Creation
@@ -77,12 +137,14 @@ export class BookingService {
     const parkingId = data.parkingLocationId;
     const mutex = getParkingMutex(parkingId);
 
-    // Acquire mutex for concurrency safety
+    // Acquire in-process mutex and cross-instance distributed lock
     return await mutex.runExclusive(async () => {
-      const parking = await ParkingLocationModel.findById(parkingId);
-      if (!parking) {
-        throw new AppError('Parking location not found.', 404);
-      }
+      const releaseDistributedLock = await acquireDistributedLock(`lock:parking:${parkingId}`);
+      try {
+        const parking = await ParkingLocationModel.findById(parkingId);
+        if (!parking) {
+          throw new AppError('Parking location not found.', 404);
+        }
 
       if (
         parking.verificationStatus !== ListingVerificationStatus.APPROVED ||
@@ -205,7 +267,10 @@ export class BookingService {
         bookingReference: booking.bookingReference,
       });
 
-      return bookingJson;
+        return bookingJson;
+      } finally {
+        await releaseDistributedLock();
+      }
     });
   }
 

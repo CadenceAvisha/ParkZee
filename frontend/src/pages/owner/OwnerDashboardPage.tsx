@@ -70,6 +70,35 @@ export const OwnerDashboardPage: React.FC = () => {
   const occupancyPercentage =
     totalCapacity > 0 ? Math.round(((totalCapacity - availableCapacity) / totalCapacity) * 100) : 0;
 
+  // Real weekly revenue calculation from host's confirmed offline receipts
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dailyRevenueMap: Record<string, { amount: number; bookings: number }> = {
+    Mon: { amount: 0, bookings: 0 },
+    Tue: { amount: 0, bookings: 0 },
+    Wed: { amount: 0, bookings: 0 },
+    Thu: { amount: 0, bookings: 0 },
+    Fri: { amount: 0, bookings: 0 },
+    Sat: { amount: 0, bookings: 0 },
+    Sun: { amount: 0, bookings: 0 },
+  };
+
+  bookings
+    .filter((b) => b.paymentStatus === 'PAID_CONFIRMED_BY_OWNER')
+    .forEach((b) => {
+      const d = new Date(b.paymentConfirmedAt || b.createdAt);
+      const day = daysOfWeek[d.getDay()];
+      if (dailyRevenueMap[day]) {
+        dailyRevenueMap[day].amount += b.totalAmount || 0;
+        dailyRevenueMap[day].bookings += 1;
+      }
+    });
+
+  const hostRevenueChartData = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => ({
+    date: day,
+    amount: dailyRevenueMap[day].amount,
+    bookings: dailyRevenueMap[day].bookings,
+  }));
+
   const handleOpenPaymentModal = (booking: Booking) => {
     setSelectedBookingForPayment(booking);
     setIsPaymentModalOpen(true);
@@ -205,7 +234,11 @@ export const OwnerDashboardPage: React.FC = () => {
       {/* Charts and Revenue Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8">
-          <RevenueChart />
+          <RevenueChart
+            title="Direct Settlement Revenue"
+            subtitle="Your confirmed offline cash & UPI receipts across this week"
+            data={hostRevenueChartData}
+          />
         </div>
         <div className="lg:col-span-4 space-y-4">
           <Card className="p-6">

@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, UserRole } from '../types/user.types';
 import { authService } from '../services/auth.service';
 import { LoginFormData, RegisterFormData } from '../schemas/auth.schema';
-import { getStoredUsers } from '../services/storage';
 
 interface AuthContextType {
   user: User | null;
@@ -13,7 +12,7 @@ interface AuthContextType {
   login: (data: LoginFormData) => Promise<User>;
   register: (data: RegisterFormData) => Promise<User>;
   logout: () => void;
-  switchDemoRole: (role: UserRole) => void;
+  switchDemoRole: (role: UserRole) => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,26 +32,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (currentUser) {
             setUser(currentUser);
           } else {
-            // Default to first driver if none found
-            const users = getStoredUsers();
-            if (users.length > 0) {
-              setUser(users[0]);
-              setToken('mock-jwt-token-driver-init');
-            }
+            setUser(null);
+            setToken(null);
           }
         } else {
-          // Auto-seed default driver for convenient demo exploration if no user yet
-          const users = getStoredUsers();
-          const driverUser = users.find((u) => u.role === 'driver') || users[0];
-          if (driverUser) {
-            setUser(driverUser);
-            setToken('mock-jwt-token-driver-init');
-            localStorage.setItem('parkzee_token', 'mock-jwt-token-driver-init');
-            localStorage.setItem('parkzee_user', JSON.stringify(driverUser));
-          }
+          setUser(null);
+          setToken(null);
         }
       } catch (err) {
-        console.error('Failed to initialize auth', err);
+        console.error('Failed to initialize session', err);
+        setUser(null);
+        setToken(null);
       } finally {
         setIsLoading(false);
       }
@@ -91,15 +81,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setToken(null);
   };
 
-  const switchDemoRole = (targetRole: UserRole) => {
-    const users = getStoredUsers();
-    const targetUser = users.find((u) => u.role === targetRole);
-    if (targetUser) {
-      const demoToken = `mock-jwt-token-${targetRole}-${Date.now()}`;
-      localStorage.setItem('parkzee_token', demoToken);
-      localStorage.setItem('parkzee_user', JSON.stringify(targetUser));
-      setUser(targetUser);
-      setToken(demoToken);
+  const switchDemoRole = async (targetRole: UserRole): Promise<User | null> => {
+    setIsLoading(true);
+    try {
+      const email = `${targetRole.toLowerCase()}@parkzee.com`;
+      const res = await authService.login({
+        email,
+        password: 'Password123!',
+      });
+      setUser(res.user);
+      setToken(res.token);
+      return res.user;
+    } catch (err) {
+      console.error('Failed to switch demo role via real backend API:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -109,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         role: user?.role || null,
         token,
-        isAuthenticated: !!user,
+        isAuthenticated: Boolean(user && token),
         isLoading,
         login,
         register,
@@ -122,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

@@ -43,6 +43,15 @@ export const BookingCheckoutPage: React.FC = () => {
   const initialStart = searchParams.get('start') || '10:00';
   const initialEnd = searchParams.get('end') || '14:00';
 
+  const savedVehicles = (() => {
+    try {
+      const saved = localStorage.getItem(`parkzee_vehicles_${user?.id || 'default'}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  })();
+  const defaultVehicle = savedVehicles?.find((v: any) => v.isDefault) || savedVehicles?.[0];
+
   const {
     register,
     handleSubmit,
@@ -52,9 +61,9 @@ export const BookingCheckoutPage: React.FC = () => {
     resolver: zodResolver(createBookingSchema),
     defaultValues: {
       parkingLocationId: parkingId || '',
-      vehiclePlate: 'HR26 DK 4421',
-      makeModel: 'Hyundai Creta',
-      vehicleType: 'car',
+      vehiclePlate: defaultVehicle?.plateNumber || 'HR26 DK 4421',
+      makeModel: defaultVehicle ? `${defaultVehicle.make} ${defaultVehicle.model}`.trim() : 'Hyundai Creta',
+      vehicleType: defaultVehicle?.type || 'car',
       bookingDate: initialDate,
       startTime: initialStart,
       endTime: initialEnd,

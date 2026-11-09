@@ -155,6 +155,8 @@ export const AddEditListingPage: React.FC = () => {
           address: data.address,
           city: data.city,
           postalCode: data.postalCode,
+          latitude: data.latitude,
+          longitude: data.longitude,
           location: { latitude: data.latitude, longitude: data.longitude },
           parkingType: data.parkingType,
           supportedVehicleTypes: data.supportedVehicleTypes,

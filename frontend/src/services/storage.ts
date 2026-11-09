@@ -1,3 +1,7 @@
+/**
+ * @deprecated Legacy prototype storage fallback.
+ * ParkZee now connects exclusively to the real Node/Express backend REST APIs.
+ */
 import { ParkingLocation } from '../types/parking.types';
 import { Booking } from '../types/booking.types';
 import { User } from '../types/user.types';

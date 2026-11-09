@@ -4,11 +4,17 @@ import { env } from './config/environment.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { initSocketServer } from './realtime/socket.js';
 import { startReservationExpiryWorker } from './workers/expiryWorker.js';
+import { seedDatabase } from './config/seed.js';
 
 const startServer = async (): Promise<void> => {
   try {
     console.log('[ParkZee] Initializing database connection...');
     await connectDatabase();
+
+    // Seed default administrative, host, driver accounts and parking facilities if empty
+    if (process.env.NODE_ENV !== 'test') {
+      await seedDatabase();
+    }
 
     const httpServer = http.createServer(app);
 

@@ -120,6 +120,16 @@ export class QRService {
       };
     }
 
+    // Time window expiry check: reject QR verification if arriving significantly past scheduled endTime
+    const now = new Date();
+    const maxEntryTime = new Date(new Date(booking.endTime).getTime() + 60 * 60 * 1000); // 1 hour past scheduled departure
+    if (booking.bookingStatus !== BookingStatus.CHECKED_IN && now > maxEntryTime) {
+      return {
+        valid: false,
+        message: 'Access Denied: Scheduled reservation time window has expired.',
+      };
+    }
+
     return {
       valid: true,
       message: 'Valid QR token verified. Driver is authorized for entry.',

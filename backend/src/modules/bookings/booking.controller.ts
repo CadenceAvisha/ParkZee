@@ -41,6 +41,12 @@ export class BookingController {
         throw new AppError('Driver ID parameter missing.', 400);
       }
 
+      // IDOR Guard: non-admins can only view their own booking history
+      const isAdmin = req.user?.role?.toUpperCase() === UserRole.ADMIN;
+      if (!isAdmin && req.user?.id !== driverId) {
+        throw new AppError('Unauthorized: You can only view your own booking history.', 403);
+      }
+
       const bookings = await bookingService.getDriverBookings(driverId);
       res.status(200).json(bookings);
     } catch (error) {
@@ -53,6 +59,12 @@ export class BookingController {
       const ownerId = req.params.ownerId || req.user?.id;
       if (!ownerId) {
         throw new AppError('Owner ID parameter missing.', 400);
+      }
+
+      // IDOR Guard: non-admins can only view reservations for their own facilities
+      const isAdmin = req.user?.role?.toUpperCase() === UserRole.ADMIN;
+      if (!isAdmin && req.user?.id !== ownerId) {
+        throw new AppError('Unauthorized: You can only view reservations for your own facilities.', 403);
       }
 
       const bookings = await bookingService.getOwnerBookings(ownerId);

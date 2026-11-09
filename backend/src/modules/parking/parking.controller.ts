@@ -94,6 +94,13 @@ export class ParkingController {
   async getOwnerListings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ownerId = req.params.ownerId || req.user!.id;
+
+      // IDOR Guard: non-admins can only view their own listings
+      const isAdmin = req.user?.role?.toUpperCase() === UserRole.ADMIN;
+      if (!isAdmin && req.user?.id !== ownerId) {
+        throw new AppError('Unauthorized: You can only view your own facility listings.', 403);
+      }
+
       const listings = await parkingService.getOwnerListings(ownerId);
       res.status(200).json({
         success: true,

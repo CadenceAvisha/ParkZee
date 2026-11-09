@@ -9,13 +9,34 @@ import { Building, Phone, Mail, QrCode, Banknote, Shield, CheckCircle2, User } f
 export const OwnerProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useNotification();
-  const [upiId, setUpiId] = useState('vikramaditya@oksbi');
-  const [acceptCash, setAcceptCash] = useState(true);
-  const [acceptUpi, setAcceptUpi] = useState(true);
-  const [phone, setPhone] = useState(user?.phone || '+91 91234 56789');
+  const settingsKey = `parkzee_host_settings_${user?.id || 'default'}`;
+
+  const initialSettings = (() => {
+    try {
+      const saved = localStorage.getItem(settingsKey);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      upiId: 'vikramaditya@oksbi',
+      acceptCash: true,
+      acceptUpi: true,
+      phone: user?.phone || '+91 91234 56789',
+    };
+  })();
+
+  const [upiId, setUpiId] = useState(initialSettings.upiId);
+  const [acceptCash, setAcceptCash] = useState(initialSettings.acceptCash);
+  const [acceptUpi, setAcceptUpi] = useState(initialSettings.acceptUpi);
+  const [phone, setPhone] = useState(initialSettings.phone);
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      localStorage.setItem(
+        settingsKey,
+        JSON.stringify({ upiId, acceptCash, acceptUpi, phone })
+      );
+    } catch {}
     showToast('success', 'Settings Saved', 'Host preferences and settlement methods updated.');
   };
 

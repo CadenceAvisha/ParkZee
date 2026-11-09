@@ -32,6 +32,11 @@ export const Navbar: React.FC = () => {
     navigate('/login');
   };
 
+  const handleSwitchRole = async (targetRole: 'driver' | 'owner' | 'admin') => {
+    await switchDemoRole(targetRole);
+    navigate(`/${targetRole}/dashboard`);
+  };
+
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -191,7 +196,7 @@ export const Navbar: React.FC = () => {
               <span className="text-[11px] font-semibold text-slate-500 uppercase px-2">Role:</span>
               <button
                 type="button"
-                onClick={() => switchDemoRole('driver')}
+                onClick={() => handleSwitchRole('driver')}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
                   role === 'driver'
                     ? 'bg-white text-brand-700 shadow-xs'
@@ -202,7 +207,7 @@ export const Navbar: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => switchDemoRole('owner')}
+                onClick={() => handleSwitchRole('owner')}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
                   role === 'owner'
                     ? 'bg-white text-brand-700 shadow-xs'
@@ -213,7 +218,7 @@ export const Navbar: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => switchDemoRole('admin')}
+                onClick={() => handleSwitchRole('admin')}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all ${
                   role === 'admin'
                     ? 'bg-white text-brand-700 shadow-xs'
@@ -332,7 +337,7 @@ export const Navbar: React.FC = () => {
             <div className="flex gap-1">
               <button
                 onClick={() => {
-                  switchDemoRole('driver');
+                  handleSwitchRole('driver');
                   setMobileMenuOpen(false);
                 }}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium ${
@@ -343,7 +348,7 @@ export const Navbar: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  switchDemoRole('owner');
+                  handleSwitchRole('owner');
                   setMobileMenuOpen(false);
                 }}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium ${
@@ -354,7 +359,7 @@ export const Navbar: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  switchDemoRole('admin');
+                  handleSwitchRole('admin');
                   setMobileMenuOpen(false);
                 }}
                 className={`text-xs px-2.5 py-1 rounded-md font-medium ${

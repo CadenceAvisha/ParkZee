@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
@@ -19,16 +19,35 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { ParkingCard } from '../../components/parking/ParkingCard';
-import { INITIAL_PARKING_LOCATIONS } from '../../services/mockData';
+import { LoadingSkeleton } from '../../components/common/LoadingSkeleton';
+import { parkingService } from '../../services/parking.service';
+import { ParkingLocation } from '../../types/parking.types';
 import { VehicleType } from '../../types/user.types';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [featuredLocations, setFeaturedLocations] = useState<ParkingLocation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [locationQuery, setLocationQuery] = useState('');
   const [vehicleType, setVehicleType] = useState<VehicleType>('car');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('14:00');
+
+  useEffect(() => {
+    setIsLoading(true);
+    parkingService
+      .searchParking({ sortBy: 'rating' })
+      .then((results) => {
+        if (results && results.length > 0) {
+          setFeaturedLocations(results.slice(0, 3));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
   const handleHeroSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,11 +243,31 @@ export const LandingPage: React.FC = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {INITIAL_PARKING_LOCATIONS.filter((p) => p.verificationStatus === 'approved').map((location) => (
-            <ParkingCard key={location.id} location={location} />
-          ))}
-        </div>
+        {isLoading ? (
+          <LoadingSkeleton count={3} className="h-64 w-full" />
+        ) : featuredLocations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredLocations.map((location) => (
+              <ParkingCard key={location.id} location={location} />
+            ))}
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-slate-50 border border-slate-200/80 rounded-2xl">
+            <MapPin className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+            <h3 className="text-sm font-bold text-slate-800">Verified Parking Facilities</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              Use our interactive search to discover nearby available parking spaces, or register as a host to list your property.
+            </p>
+            <div className="mt-4 flex justify-center gap-3">
+              <Button variant="primary" size="sm" onClick={() => navigate('/search')}>
+                Explore Map
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/register')}>
+                Host Parking
+              </Button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Dual Value Propositions: Drivers vs Owners */}

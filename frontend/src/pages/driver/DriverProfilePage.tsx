@@ -11,26 +11,42 @@ export const DriverProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useNotification();
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: 'veh-1',
-      make: 'Hyundai',
-      model: 'Creta',
-      plateNumber: 'HR26 DK 4421',
-      type: 'suv',
-      color: 'Polar White',
-      isDefault: true,
-    },
-    {
-      id: 'veh-2',
-      make: 'Honda',
-      model: 'City',
-      plateNumber: 'DL3C BB 1092',
-      type: 'car',
-      color: 'Silver',
-      isDefault: false,
-    },
-  ]);
+  const storageKey = `parkzee_vehicles_${user?.id || 'default'}`;
+
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: 'veh-1',
+        make: 'Hyundai',
+        model: 'Creta',
+        plateNumber: 'HR26 DK 4421',
+        type: 'suv',
+        color: 'Polar White',
+        isDefault: true,
+      },
+      {
+        id: 'veh-2',
+        make: 'Honda',
+        model: 'City',
+        plateNumber: 'DL3C BB 1092',
+        type: 'car',
+        color: 'Silver',
+        isDefault: false,
+      },
+    ];
+  });
+
+  // Persist vehicles
+  const updateVehicles = (newVehicles: Vehicle[]) => {
+    setVehicles(newVehicles);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newVehicles));
+    } catch {}
+  };
 
   // New vehicle form
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -49,9 +65,10 @@ export const DriverProfilePage: React.FC = () => {
       plateNumber: newPlate.toUpperCase(),
       type: newType,
       color: 'Standard',
-      isDefault: false,
+      isDefault: vehicles.length === 0,
     };
-    setVehicles([...vehicles, newVeh]);
+    const updated = [...vehicles, newVeh];
+    updateVehicles(updated);
     setShowAddVehicle(false);
     setNewMake('');
     setNewModel('');
@@ -60,7 +77,8 @@ export const DriverProfilePage: React.FC = () => {
   };
 
   const handleRemoveVehicle = (id: string) => {
-    setVehicles(vehicles.filter((v) => v.id !== id));
+    const updated = vehicles.filter((v) => v.id !== id);
+    updateVehicles(updated);
     showToast('info', 'Vehicle Removed', 'Vehicle was removed from your profile.');
   };
 

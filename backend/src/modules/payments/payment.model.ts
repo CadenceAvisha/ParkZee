@@ -24,6 +24,7 @@ const paymentConfirmationSchema = new Schema<IPaymentConfirmation>(
       type: Schema.Types.ObjectId,
       ref: 'Booking',
       required: true,
+      unique: true,
       index: true,
     },
     bookingReference: {

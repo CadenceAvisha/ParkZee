@@ -60,7 +60,18 @@ export const AdminAnalyticsPage: React.FC = () => {
           />
         </div>
         <div className="lg:col-span-4">
-          <BookingsPieChart title="Booking Lifecycle Breakdown" />
+          <BookingsPieChart
+            title="Booking Lifecycle Breakdown"
+            data={
+              stats
+                ? [
+                    { name: 'Completed', value: stats.completedBookings, color: '#059669' },
+                    { name: 'Confirmed Active', value: stats.activeBookings, color: '#0284c7' },
+                    { name: 'Cancelled / Expired', value: stats.cancelledBookings, color: '#e11d48' },
+                  ]
+                : undefined
+            }
+          />
         </div>
       </div>
 

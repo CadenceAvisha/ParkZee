@@ -35,6 +35,8 @@ export const createApp = (): Express => {
         // Allow requests with no origin (such as mobile apps, curl, or Postman)
         if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
           callback(null, true);
+        } else if (env.NODE_ENV === 'production') {
+          callback(new AppError('CORS origin unauthorized: Access denied from this origin.', 403));
         } else {
           callback(null, true); // Permissive in dev to avoid local dev blocking
         }
