@@ -11,6 +11,7 @@ export class AuthController {
         data: result,
         user: result.user,
         token: result.token,
+        refreshToken: result.refreshToken,
       });
     } catch (error) {
       next(error);
@@ -26,7 +27,17 @@ export class AuthController {
         data: result,
         user: result.user,
         token: result.token,
+        refreshToken: result.refreshToken,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const result = await authService.refresh(req.body.refreshToken);
+      res.status(200).json({ success: true, data: result, ...result });
     } catch (error) {
       next(error);
     }

@@ -43,6 +43,7 @@ export interface ParkingLocation {
   rating: number;
   reviewCount: number;
   distanceKm?: number;
+  availableForBooking?: boolean;
   createdAt: string;
   updatedAt?: string;
 }

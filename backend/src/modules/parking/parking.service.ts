@@ -1,6 +1,7 @@
 import { ParkingLocationModel, IParkingLocation } from './parking.model.js';
-import { ListingVerificationStatus, VehicleType } from '../../types/index.js';
+import { ListingVerificationStatus, VehicleType, BookingStatus } from '../../types/index.js';
 import { AppError } from '../../middleware/errorHandler.js';
+import { BookingModel } from '../bookings/booking.model.js';
 
 export class ParkingService {
   async searchParking(filters: {
@@ -13,6 +14,9 @@ export class ParkingService {
     maxPrice?: number;
     amenities?: string[] | string;
     sortBy?: 'distance' | 'price_asc' | 'price_desc' | 'rating' | 'capacity';
+    date?: string;
+    startTime?: string;
+    endTime?: string;
   }): Promise<any[]> {
     const query: Record<string, any> = {
       verificationStatus: ListingVerificationStatus.APPROVED,
@@ -49,8 +53,9 @@ export class ParkingService {
     }
 
     // Geospatial filter if coordinates are provided
-    const radiusMeters = (filters.radiusKm || 25) * 1000;
-    if (filters.latitude !== undefined && filters.longitude !== undefined) {
+    const hasCoordinates = filters.latitude !== undefined && filters.longitude !== undefined;
+    const radiusMeters = (filters.radiusKm ?? 5) * 1000;
+    if (hasCoordinates) {
       query.location = {
         $nearSphere: {
           $geometry: {
@@ -62,20 +67,42 @@ export class ParkingService {
       };
     }
 
-    let listings = await ParkingLocationModel.find(query);
+    // Mongo's 2dsphere query excludes records with missing/invalid GeoJSON coordinates.
+    const listings = await ParkingLocationModel.find(query);
+
+    const requestedStart = filters.date && filters.startTime ? new Date(`${filters.date}T${filters.startTime}`) : new Date();
+    const requestedEnd = filters.date && filters.endTime ? new Date(`${filters.date}T${filters.endTime}`) : new Date(requestedStart.getTime() + 60 * 60 * 1000);
+    const startTime = requestedStart;
+    const endTime = requestedEnd;
+    const validWindow = Number.isFinite(startTime.getTime()) && Number.isFinite(endTime.getTime()) && endTime > startTime;
+    const occupancy = validWindow && listings.length
+      ? await BookingModel.aggregate([
+          { $match: {
+            parkingLocationId: { $in: listings.map((listing) => listing._id) },
+            bookingStatus: { $in: [BookingStatus.RESERVED_AWAITING_OWNER_CONFIRMATION, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] },
+            startTime: { $lt: endTime },
+            endTime: { $gt: startTime },
+          } },
+          { $group: { _id: '$parkingLocationId', count: { $sum: 1 } } },
+        ])
+      : [];
+    const occupiedById = new Map(occupancy.map((item: { _id: any; count: number }) => [item._id.toString(), item.count]));
 
     // Compute approximate distance if user coordinates provided
     const results: Record<string, any>[] = listings.map((l) => {
       const json: Record<string, any> = l.toJSON();
-      if (filters.latitude !== undefined && filters.longitude !== undefined) {
-        const lat1 = filters.latitude;
-        const lon1 = filters.longitude;
+      if (hasCoordinates && (l.location as any)?.coordinates?.length === 2) {
+        const lat1 = filters.latitude!;
+        const lon1 = filters.longitude!;
         const lat2 = (l.location as any).coordinates[1];
         const lon2 = (l.location as any).coordinates[0];
         json.distanceKm = this.calculateHaversineDistance(lat1, lon1, lat2, lon2);
       }
+      const activeBookings = occupiedById.get(l._id.toString()) ?? 0;
+      json.availableCapacity = Math.max(0, l.totalCapacity - activeBookings);
+      json.availableForBooking = validWindow && json.availableCapacity > 0 && this.isWithinOperatingHours(l.operatingHours, startTime, endTime);
       return json;
-    });
+    }).filter((item) => item.availableForBooking);
 
     // Sorting
     if (filters.sortBy === 'price_asc') {
@@ -87,7 +114,7 @@ export class ParkingService {
     } else if (filters.sortBy === 'capacity') {
       results.sort((a, b) => b.availableCapacity - a.availableCapacity);
     } else if (filters.sortBy === 'distance') {
-      results.sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
+      results.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
     }
 
     return results;
@@ -121,7 +148,7 @@ export class ParkingService {
         coordinates: [data.longitude, data.latitude], // GeoJSON: [lng, lat]
       },
       entranceLocation:
-        data.entranceLongitude && data.entranceLatitude
+        data.entranceLongitude !== undefined && data.entranceLatitude !== undefined
           ? {
               type: 'Point',
               coordinates: [data.entranceLongitude, data.entranceLatitude],
@@ -169,6 +196,9 @@ export class ParkingService {
         type: 'Point',
         coordinates: [data.longitude, data.latitude],
       };
+    }
+    if ((data.latitude === undefined) !== (data.longitude === undefined)) {
+      throw new AppError('Latitude and longitude must be updated together.', 400);
     }
 
     if (data.name) listing.name = data.name;
@@ -260,6 +290,14 @@ export class ParkingService {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return Number((R * c).toFixed(2));
+  }
+
+  private isWithinOperatingHours(hours: any, startTime: Date, endTime: Date): boolean {
+    if (!hours || hours.is24x7) return true;
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    if (hours.openDays?.length && (!hours.openDays.includes(days[startTime.getDay()]) || !hours.openDays.includes(days[endTime.getDay()]))) return false;
+    const format = (date: Date) => `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    return (!hours.openTime || format(startTime) >= hours.openTime) && (!hours.closeTime || format(endTime) <= hours.closeTime);
   }
 }
 

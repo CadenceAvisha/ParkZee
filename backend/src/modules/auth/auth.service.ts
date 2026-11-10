@@ -6,12 +6,32 @@ import {
   generateRefreshToken,
   generateRandomToken,
   hashToken,
+  verifyRefreshToken,
 } from '../../utils/token.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { sendEmail } from '../../config/mail.js';
 import { AccountStatus, UserRole } from '../../types/index.js';
 
 export class AuthService {
+  async refresh(refreshToken: string): Promise<{ user: any; token: string; refreshToken: string }> {
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch {
+      throw new AppError('Invalid or expired refresh token.', 401);
+    }
+    const user = await User.findById(payload.userId);
+    if (!user || user.accountStatus === AccountStatus.SUSPENDED) {
+      throw new AppError('Refresh token is no longer valid.', 401);
+    }
+    const claims = { userId: user._id.toString(), email: user.email, role: user.role, name: user.name };
+    return {
+      user: user.toJSON(),
+      token: generateAccessToken(claims),
+      refreshToken: generateRefreshToken(claims),
+    };
+  }
+
   async register(data: {
     name: string;
     email: string;

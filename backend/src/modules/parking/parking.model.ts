@@ -84,6 +84,10 @@ const parkingLocationSchema = new Schema<IParkingLocation>(
       coordinates: {
         type: [Number], // [longitude, latitude]
         required: true,
+        validate: {
+          validator: (coordinates: number[]) => Array.isArray(coordinates) && coordinates.length === 2 && Number.isFinite(coordinates[0]) && Number.isFinite(coordinates[1]) && Math.abs(coordinates[0]) <= 180 && Math.abs(coordinates[1]) <= 90,
+          message: 'Location coordinates must be [longitude, latitude] within valid ranges.',
+        },
       },
     },
     entranceLocation: {

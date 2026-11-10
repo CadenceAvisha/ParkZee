@@ -141,6 +141,24 @@ describe('Auth Module & Role Authorization Tests', () => {
     expect(res.body.user.email).toBe(driverData.email);
   });
 
+  it('should issue a replacement access and refresh token from a valid refresh token', async () => {
+    const login = await request(app).post('/api/auth/register').send(driverData);
+    expect(login.body.refreshToken).toBeDefined();
+
+    const refreshed = await request(app).post('/api/auth/refresh').send({ refreshToken: login.body.refreshToken });
+    expect(refreshed.status).toBe(200);
+    expect(refreshed.body.token).toBeDefined();
+    expect(refreshed.body.refreshToken).toBeDefined();
+    expect(refreshed.body.user.role).toBe('driver');
+    const profile = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${refreshed.body.token}`);
+    expect(profile.status).toBe(200);
+  });
+
+  it('should reject an invalid refresh token', async () => {
+    const refreshed = await request(app).post('/api/auth/refresh').send({ refreshToken: 'not-a-jwt' });
+    expect(refreshed.status).toBe(401);
+  });
+
   it('should authenticate owner accounts and preserve their database role', async () => {
     await request(app).post('/api/auth/register').send(ownerData);
     const res = await request(app).post('/api/auth/login').send({ email: ownerData.email, password: ownerData.password });

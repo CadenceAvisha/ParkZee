@@ -26,6 +26,14 @@ router.post(
   authController.login
 );
 
+router.post('/refresh', authRateLimiter, (req, res, next) => {
+  if (typeof req.body?.refreshToken !== 'string' || !req.body.refreshToken) {
+    res.status(400).json({ success: false, message: 'Refresh token is required.' });
+    return;
+  }
+  authController.refresh(req, res, next);
+});
+
 router.get('/me', authenticate, authController.me);
 
 router.post(

@@ -1,6 +1,7 @@
 import apiClient from './api';
 import { AuthResponse, User } from '../types/user.types';
 import { LoginFormData, RegisterFormData } from '../schemas/auth.schema';
+import { authStorage } from './authStorage';
 
 export const authService = {
   login: async (credentials: LoginFormData, expectedRole?: User['role']): Promise<AuthResponse> => {
@@ -11,9 +12,8 @@ export const authService = {
         const roleName = authData.user?.role === 'owner' ? 'Parking Owner' : authData.user?.role === 'admin' ? 'Administrator' : 'User / Driver';
         throw new Error(`This email belongs to a ${roleName} account. Choose that account type to continue.`);
       }
-      if (authData?.token) {
-        localStorage.setItem('parkzee_token', authData.token);
-        localStorage.setItem('parkzee_user', JSON.stringify(authData.user));
+      if (authData?.token && authData.refreshToken) {
+        authStorage.save(authData.token, authData.refreshToken, authData.user);
       }
       return authData;
     } catch (error: any) {
@@ -29,9 +29,8 @@ export const authService = {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/register', formData);
       const authData = response.data;
-      if (authData?.token) {
-        localStorage.setItem('parkzee_token', authData.token);
-        localStorage.setItem('parkzee_user', JSON.stringify(authData.user));
+      if (authData?.token && authData.refreshToken) {
+        authStorage.save(authData.token, authData.refreshToken, authData.user);
       }
       return authData;
     } catch (error: any) {
@@ -44,27 +43,25 @@ export const authService = {
   },
 
   getCurrentUser: async (): Promise<User | null> => {
-    const token = localStorage.getItem('parkzee_token');
+    const token = authStorage.getAccessToken();
     if (!token) return null;
 
     try {
       const response = await apiClient.get<any>('/auth/me');
       const user = response.data?.user || response.data?.data || response.data;
       if (user) {
-        localStorage.setItem('parkzee_user', JSON.stringify(user));
+        authStorage.saveUser(user);
         return user;
       }
     } catch (err) {
-      localStorage.removeItem('parkzee_token');
-      localStorage.removeItem('parkzee_user');
+      authStorage.clear();
       return null;
     }
     return null;
   },
 
   logout: () => {
-    localStorage.removeItem('parkzee_token');
-    localStorage.removeItem('parkzee_user');
+    authStorage.clear();
   },
 
   forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {

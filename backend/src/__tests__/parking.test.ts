@@ -135,6 +135,7 @@ describe('Parking Module & Geospatial Discovery Tests', () => {
     // Search should now find it
     const searchRes = await request(app).get('/api/parking/search').query({
       locationQuery: 'Bengaluru',
+      ...bookingWindowQuery(),
     });
 
     expect(searchRes.status).toBe(200);
@@ -160,6 +161,7 @@ describe('Parking Module & Geospatial Discovery Tests', () => {
       latitude: 12.9720,
       longitude: 77.5950,
       radiusKm: 5,
+      ...bookingWindowQuery(),
     });
 
     expect(searchRes.status).toBe(200);
@@ -192,3 +194,8 @@ describe('Parking Module & Geospatial Discovery Tests', () => {
     expect(deleteRes.status).toBe(403);
   });
 });
+
+function bookingWindowQuery() {
+  const date = new Date();
+  return { date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`, startTime: '10:00', endTime: '11:00' };
+}

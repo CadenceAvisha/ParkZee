@@ -33,6 +33,7 @@ export const AddEditListingPage: React.FC = () => {
   const { showToast } = useNotification();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoInput, setPhotoInput] = useState('');
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
 
   const {
     register,
@@ -47,10 +48,8 @@ export const AddEditListingPage: React.FC = () => {
       name: '',
       description: '',
       address: '',
-      city: 'Gurugram',
+      city: '',
       postalCode: '',
-      latitude: 28.4986,
-      longitude: 77.0878,
       parkingType: 'covered',
       supportedVehicleTypes: ['car', 'suv'],
       totalCapacity: 10,
@@ -85,8 +84,8 @@ export const AddEditListingPage: React.FC = () => {
             address: item.address,
             city: item.city,
             postalCode: item.postalCode || '',
-            latitude: item.location.latitude,
-            longitude: item.location.longitude,
+            latitude: item.location?.latitude,
+            longitude: item.location?.longitude,
             parkingType: item.parkingType,
             supportedVehicleTypes: item.supportedVehicleTypes,
             totalCapacity: item.totalCapacity,
@@ -98,15 +97,18 @@ export const AddEditListingPage: React.FC = () => {
             amenities: item.amenities,
             photos: item.photos,
           });
+          setLocationConfirmed(Number.isFinite(item.location?.latitude) && Number.isFinite(item.location?.longitude));
         }
       };
       loadListing();
     }
   }, [isEditing, id, reset]);
 
-  const handleCoordsChange = (coords: { latitude: number; longitude: number }) => {
-    setValue('latitude', coords.latitude);
-    setValue('longitude', coords.longitude);
+  const handleCoordsChange = (coords: { latitude: number; longitude: number; address: string }) => {
+    setValue('latitude', coords.latitude, { shouldValidate: true });
+    setValue('longitude', coords.longitude, { shouldValidate: true });
+    if (coords.address) setValue('address', coords.address, { shouldValidate: true });
+    setLocationConfirmed(true);
   };
 
   const handleToggleAmenity = (amenity: string) => {
@@ -146,6 +148,10 @@ export const AddEditListingPage: React.FC = () => {
 
   const onSubmit = async (data: ParkingListingFormData) => {
     if (!user) return;
+    if (!locationConfirmed || !Number.isFinite(data.latitude) || !Number.isFinite(data.longitude)) {
+      showToast('error', 'Entrance Pin Required', 'Place and confirm the exact parking entrance on the map before submitting.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       if (isEditing && id) {
@@ -281,10 +287,13 @@ export const AddEditListingPage: React.FC = () => {
               Position Entrance Pin on Map *
             </label>
             <LocationPickerMap
-              initialLat={watchedLat || 28.4986}
-              initialLng={watchedLng || 77.0878}
-              onChange={handleCoordsChange}
+              initialLat={watchedLat}
+              initialLng={watchedLng}
+              initialAddress={watch('address')}
+              onConfirm={handleCoordsChange}
+              onSelectionChange={setLocationConfirmed}
             />
+            {!locationConfirmed && <p className="mt-2 text-xs font-medium text-amber-700">Confirm the selected entrance pin before saving this listing.</p>}
           </div>
         </Card>
 

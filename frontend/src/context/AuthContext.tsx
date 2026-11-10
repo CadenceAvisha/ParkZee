@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User, UserRole } from '../types/user.types';
 import { authService } from '../services/auth.service';
 import { LoginFormData, RegisterFormData } from '../schemas/auth.schema';
+import { authStorage } from '../services/authStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -22,9 +23,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+      setToken(null);
+    };
+    window.addEventListener('parkzee:session-expired', handleSessionExpired);
     const initAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('parkzee_token');
+        const storedToken = authStorage.getAccessToken();
         if (storedToken) {
           setToken(storedToken);
           const currentUser = await authService.getCurrentUser();
@@ -48,6 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     initAuth();
+    return () => window.removeEventListener('parkzee:session-expired', handleSessionExpired);
   }, []);
 
   const login = async (data: LoginFormData, expectedRole?: UserRole): Promise<User> => {

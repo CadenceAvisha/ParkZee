@@ -17,6 +17,9 @@ export class ParkingController {
         maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
         amenities: req.query.amenities as any,
         sortBy: req.query.sortBy as any,
+        date: req.query.date as string,
+        startTime: req.query.startTime as string,
+        endTime: req.query.endTime as string,
       });
 
       res.status(200).json({

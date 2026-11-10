@@ -1,16 +1,21 @@
 import { z } from 'zod';
 import { ParkingType, VehicleType, ListingVerificationStatus } from '../../types/index.js';
 
-export const createParkingValidationSchema = z.object({
+const latitudeInput = z.preprocess((value) => value === '' ? undefined : value, z.coerce.number().min(-90).max(90));
+const longitudeInput = z.preprocess((value) => value === '' ? undefined : value, z.coerce.number().min(-180).max(180));
+const optionalLatitudeInput = z.preprocess((value) => value === '' ? undefined : value, z.coerce.number().min(-90).max(90).optional());
+const optionalLongitudeInput = z.preprocess((value) => value === '' ? undefined : value, z.coerce.number().min(-180).max(180).optional());
+
+const createParkingSchema = z.object({
   name: z.string().min(3, 'Facility name must be at least 3 characters long'),
   description: z.string().min(10, 'Description must be at least 10 characters long'),
   address: z.string().min(5, 'Address is required'),
   city: z.string().min(2, 'City is required'),
   postalCode: z.string().optional(),
-  latitude: z.coerce.number().min(-90).max(90),
-  longitude: z.coerce.number().min(-180).max(180),
-  entranceLatitude: z.coerce.number().min(-90).max(90).optional(),
-  entranceLongitude: z.coerce.number().min(-180).max(180).optional(),
+  latitude: latitudeInput,
+  longitude: longitudeInput,
+  entranceLatitude: optionalLatitudeInput,
+  entranceLongitude: optionalLongitudeInput,
   parkingType: z.enum([
     ParkingType.COVERED,
     ParkingType.UNCOVERED,
@@ -30,20 +35,40 @@ export const createParkingValidationSchema = z.object({
   photos: z.array(z.string()).default([]),
 });
 
-export const updateParkingValidationSchema = createParkingValidationSchema.partial();
+export const createParkingValidationSchema = createParkingSchema.superRefine((data, ctx) => {
+  if ((data.entranceLatitude === undefined) !== (data.entranceLongitude === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['entranceLatitude'], message: 'Entrance latitude and longitude must be provided together.' });
+  }
+});
+
+export const updateParkingValidationSchema = createParkingSchema.partial().superRefine((data, ctx) => {
+  if ((data.latitude === undefined) !== (data.longitude === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['latitude'], message: 'Latitude and longitude must be updated together.' });
+  }
+  if ((data.entranceLatitude === undefined) !== (data.entranceLongitude === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['entranceLatitude'], message: 'Entrance latitude and longitude must be provided together.' });
+  }
+});
 
 export const parkingSearchQuerySchema = z.object({
   locationQuery: z.string().optional(),
   q: z.string().optional(), // Support query param alias
   latitude: z.coerce.number().min(-90).max(90).optional(),
   longitude: z.coerce.number().min(-180).max(180).optional(),
-  radiusKm: z.coerce.number().min(0.5).max(100).default(25),
+  radiusKm: z.coerce.number().min(0.5).max(100).default(5),
+  date: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
   vehicleType: z.string().optional(),
   vehicle: z.string().optional(),
   parkingType: z.string().optional(),
   maxPrice: z.coerce.number().positive().optional(),
   amenities: z.union([z.string(), z.array(z.string())]).optional(),
   sortBy: z.enum(['distance', 'price_asc', 'price_desc', 'rating', 'capacity']).default('distance'),
+}).superRefine((data, ctx) => {
+  if ((data.latitude === undefined) !== (data.longitude === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['latitude'], message: 'Latitude and longitude must be provided together.' });
+  }
 });
 
 export const updateVerificationValidationSchema = z.object({

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ParkingSearchFilters, ParkingType } from '../../types/parking.types';
 import { VehicleType } from '../../types/user.types';
-import { Search, Navigation, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { Search, Navigation, ArrowUpDown } from 'lucide-react';
 import { Button } from '../common/Button';
 
 interface ParkingFilterBarProps {
@@ -9,6 +9,7 @@ interface ParkingFilterBarProps {
   onFilterChange: (newFilters: Partial<ParkingSearchFilters>) => void;
   onDetectLocation: () => void;
   isLocating?: boolean;
+  onSearchLocation: (query: string) => void;
 }
 
 export const ParkingFilterBar: React.FC<ParkingFilterBarProps> = ({
@@ -16,21 +17,25 @@ export const ParkingFilterBar: React.FC<ParkingFilterBarProps> = ({
   onFilterChange,
   onDetectLocation,
   isLocating = false,
+  onSearchLocation,
 }) => {
+  const [locationText, setLocationText] = React.useState(filters.locationQuery || '');
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-subtle mb-6 space-y-3">
       {/* Top Search & Geolocation Row */}
-      <div className="flex flex-col sm:flex-row gap-2.5">
+      <form onSubmit={(event) => { event.preventDefault(); onSearchLocation(locationText); }} className="flex flex-col sm:flex-row gap-2.5">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            value={filters.locationQuery || ''}
-            onChange={(e) => onFilterChange({ locationQuery: e.target.value })}
+            value={locationText}
+            onChange={(e) => setLocationText(e.target.value)}
             placeholder="Search by area, landmark, or street name (e.g. Cyber City, MG Road)..."
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500 transition-colors"
           />
         </div>
+
+        <Button type="submit" variant="secondary" size="md" leftIcon={<Search className="w-4 h-4" />} className="shrink-0">Search Area</Button>
 
         <Button
           type="button"
@@ -43,11 +48,17 @@ export const ParkingFilterBar: React.FC<ParkingFilterBarProps> = ({
         >
           Near Me
         </Button>
-      </div>
+      </form>
 
       {/* Filter Badges and Selectors */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 text-xs">
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400 font-medium">Radius:</span>
+            <select value={filters.radiusKm ?? 5} onChange={(e) => onFilterChange({ radiusKm: Number(e.target.value) })} className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium">
+              {[1, 2, 5, 10, 20, 50].map((radius) => <option key={radius} value={radius}>{radius} km</option>)}
+            </select>
+          </div>
           {/* Vehicle Type */}
           <div className="flex items-center gap-1.5">
             <span className="text-slate-400 font-medium">Vehicle:</span>
